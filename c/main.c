@@ -32,7 +32,7 @@ int main(){
 }
 
 
-int server(){
+    int server(){
     int serverfd = socket(AF_INET,SOCK_STREAM,0);
 
     listener_addr.sin_family = AF_INET;
@@ -40,7 +40,7 @@ int server(){
     listener_addr.sin_addr.s_addr = INADDR_ANY;
 
 
-    if (*serverfd<0){
+    if (serverfd<0){
         printf("Error creating socket.\n");
         return 1;
 }
@@ -50,8 +50,10 @@ int server(){
         printf("Error binding socket.\n");
         return 1;
     }
+    char ip_address[INET_ADDRSTRLEN];
+    inet_ntop(AF_INET, &(listener_addr.sin_addr), ip_address, INET_ADDRSTRLEN);
     //add ip address to this print
-    printf("Waiting for connection on port %d...\n",listener_addr.sin_port);
+    printf("Waiting for connection on port %d at %s...\n",ntohs(listener_addr.sin_port), ip_address);
 
     listen(serverfd, 0);
 
@@ -71,7 +73,20 @@ int server(){
 
 int client(){
     int sockfd = socket(AF_INET, SOCK_STREAM,0);
+    if(sockfd<0){
+        printf("Error creating a socket.\n");
+    }
 
-    connect(sockfd, (struct sockaddr *) &listener_addr, sizeof(listener_addr));
+    struct sockaddr_in server_addr = {
+        .sin_family = AF_INET,
+        .sin_port = htons(5555),
+    };
+    if(inet_pton(AF_INET,"127.0.0.1",&server_addr.sin_addr)<0){
+        printf("Could not assign ip address");
+    }
+    
+
+    connect(sockfd, (struct sockaddr *) &server_addr, sizeof(server_addr));
+
 
 }
