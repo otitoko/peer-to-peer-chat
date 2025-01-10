@@ -2,6 +2,8 @@
 #include <sys/socket.h>
 #include <string.h>
 #include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 
 
 int server();
@@ -64,7 +66,12 @@ int main(){
     for(int i=0;i<3;i++){
         dup2(acceptfd,i);
     }
-    printf("Successful connection");
+    
+    char buf[] = {"Successful connection"};
+    ssize_t bytes_sent = send(acceptfd, buf, sizeof(buf),0);
+    if(bytes_sent < 0){
+        printf("Error sending message\n");
+    }
 
     close(serverfd);
 
@@ -81,12 +88,17 @@ int client(){
         .sin_family = AF_INET,
         .sin_port = htons(5555),
     };
-    if(inet_pton(AF_INET,"127.0.0.1",&server_addr.sin_addr)<0){
+    if(inet_pton(AF_INET,"127.0.0.1",&server_addr.sin_addr)<=0){
         printf("Could not assign ip address");
     }
     
 
     connect(sockfd, (struct sockaddr *) &server_addr, sizeof(server_addr));
+    char buf[1024];
+    memset(buf,0,sizeof(buf));
+
+    recv(sockfd, buf, sizeof(buf),0);
+    printf("%s\n",buf);
 
 
 }
