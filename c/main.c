@@ -13,7 +13,7 @@ int client();
 struct sockaddr_in listener_addr;
 
 int main(){
-    
+
     int type;
     printf("Hello World!\n");
     printf("Choose handler type:\n");
@@ -28,13 +28,13 @@ int main(){
         server();
     }
 
-    
+
 
     return 0;
 }
 
 
-    int server(){
+int server(){
     int serverfd = socket(AF_INET,SOCK_STREAM,0);
 
     listener_addr.sin_family = AF_INET;
@@ -45,7 +45,7 @@ int main(){
     if (serverfd<0){
         printf("Error creating socket.\n");
         return 1;
-}
+    }
 
     int bindfd = bind(serverfd,(struct sockaddr *)&listener_addr, sizeof(listener_addr));
     if(bindfd<0){
@@ -54,7 +54,7 @@ int main(){
     }
     char ip_address[INET_ADDRSTRLEN];
     inet_ntop(AF_INET, &(listener_addr.sin_addr), ip_address, INET_ADDRSTRLEN);
-    //add ip address to this print
+
     printf("Waiting for connection on port %d at %s...\n",ntohs(listener_addr.sin_port), ip_address);
 
     listen(serverfd, 0);
@@ -63,16 +63,28 @@ int main(){
     if(acceptfd<0){
         printf("Could not connect to client\n");
     }
+    /*
     for(int i=0;i<3;i++){
         dup2(acceptfd,i);
     }
-    
-    char buf[] = {"Successful connection"};
-    ssize_t bytes_sent = send(acceptfd, buf, sizeof(buf),0);
-    if(bytes_sent < 0){
-        printf("Error sending message\n");
+    */
+    char buf[1024];
+
+    memset(buf,0,sizeof(buf));
+    ssize_t bytes = recv(acceptfd, buf, sizeof(buf)-1,0);
+
+    if(bytes<0){
+        printf("Error recieving message");
+    }
+    else if(bytes == 0){
+        printf("client dc");
+    }
+    else {
+        buf[bytes] = '\0';
+        printf("%s",buf);
     }
 
+    close(acceptfd);
     close(serverfd);
 
 }
@@ -94,11 +106,21 @@ int client(){
     
 
     connect(sockfd, (struct sockaddr *) &server_addr, sizeof(server_addr));
+
     char buf[1024];
     memset(buf,0,sizeof(buf));
 
-    recv(sockfd, buf, sizeof(buf),0);
+    printf("Send a message to the server: ");
+   scanf("%s",buf);
+
+   ssize_t bytes = send(sockfd, buf, strlen(buf),0);
+   if(bytes<0){
+       printf("its fucked");
+   }
+
+
     printf("%s\n",buf);
 
+    close(sockfd);
 
 }
