@@ -15,7 +15,7 @@ struct sockaddr_in listener_addr;
 
 int main(){
 
-    char input[10];
+    char input[3];
     int type;
 
     printf("Hello World!\n");
