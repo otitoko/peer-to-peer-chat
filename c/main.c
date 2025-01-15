@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/socket.h>
 #include <string.h>
 #include <netinet/in.h>
@@ -14,13 +15,23 @@ struct sockaddr_in listener_addr;
 
 int main(){
 
+    char input[10];
     int type;
+
     printf("Hello World!\n");
     printf("Choose handler type:\n");
     printf("1. Client\n");
     printf("2. Server\n");
 
-    scanf("%i", &type);
+    fgets(input, sizeof(input),stdin);
+
+    size_t len = strlen(input);
+    if (len > 0 && input[len - 1] == '\n') {
+        input[len - 1] = '\0';
+    }
+
+    type = atoi(input);
+    
     if(type==1){
         client();
     }
@@ -57,7 +68,7 @@ int server(){
 
     printf("Waiting for connection on port %d at %s...\n",ntohs(listener_addr.sin_port), ip_address);
 
-    listen(serverfd, 0);
+    listen(serverfd, 5);
 
     int acceptfd = accept(serverfd,NULL,NULL);
     if(acceptfd<0){
@@ -108,18 +119,23 @@ int client(){
     connect(sockfd, (struct sockaddr *) &server_addr, sizeof(server_addr));
 
     char buf[1024];
-    memset(buf,0,sizeof(buf));
 
     printf("Send a message to the server: ");
-   scanf("%s",buf);
+    fgets(buf,sizeof(buf),stdin);
 
-   ssize_t bytes = send(sockfd, buf, strlen(buf),0);
-   if(bytes<0){
-       printf("its fucked");
-   }
+    size_t len = strlen(buf);
+    if (len > 0 && buf[len - 1] == '\n') {
+        buf[len - 1] = '\0';
+    }
+
+    ssize_t bytes = send(sockfd, buf, strlen(buf),0);
+    if(bytes<=0){
+        printf("\nmsg didnt send\n");
+        return 1;
+    }
 
 
-    printf("%s\n",buf);
+    printf("\nMessage: %s\n",buf);
 
     close(sockfd);
 
