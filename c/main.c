@@ -5,6 +5,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <pthread.h>
 
 
 int server();
@@ -111,17 +112,29 @@ int client(){
         .sin_family = AF_INET,
         .sin_port = htons(5555),
     };
+
     if(inet_pton(AF_INET,"127.0.0.1",&server_addr.sin_addr)<=0){
         printf("Could not assign ip address");
     }
-    
 
     connect(sockfd, (struct sockaddr *) &server_addr, sizeof(server_addr));
 
-    char buf[1024];
+    char *buf = malloc(32);
+
+    char ch;
+    int index = 0;
+
 
     printf("Send a message to the server: ");
-    fgets(buf,sizeof(buf),stdin);
+
+    while((ch = getchar()) != '\n' && ch != EOF){
+        if(index >= sizeof(buf)){
+            realloc(buf,sizeof(buf)+(32*sizeof(char)));
+        }
+        buf[index] = ch;
+    }
+
+    //input = fgets(buf,sizeof(buf),stdin);
 
     size_t len = strlen(buf);
     if (len > 0 && buf[len - 1] == '\n') {
