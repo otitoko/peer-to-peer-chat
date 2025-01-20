@@ -93,15 +93,15 @@ int server(){
 
 
         if(bytes<0){
-            printf("Error recieving message");
+            printf("\nError recieving message");
             return 1;
         }
         else if(bytes == 0){
-            printf("client dc");
+            printf("\nClient has disconnected");
             return 1;
         }
         else{
-            printf("\nanon:");
+            printf("\nanon: ");
             buf[bytes] = '\0';
             printf("%s",buf);
             fflush(stdout);
@@ -117,7 +117,7 @@ int server(){
 int client(){
     int sockfd = socket(AF_INET, SOCK_STREAM,0);
     if(sockfd<0){
-        printf("Error creating a socket.\n");
+        printf("\nError creating a socket.\n");
     }
 
     struct sockaddr_in server_addr = {
@@ -125,13 +125,27 @@ int client(){
         .sin_port = htons(5555),
     };
 
-    if(inet_pton(AF_INET,"127.0.0.1",&server_addr.sin_addr)<=0){
-        printf("Could not assign ip address");
+
+    char addr_buf[17];
+    printf("\nConnect to server: ");
+    fgets(addr_buf,17,stdin);
+
+
+    size_t len = strlen(addr_buf);
+    if (len > 0 && addr_buf[len - 1] == '\n') {
+        addr_buf[len - 1] = '\0';
+    }
+
+    if(strlen(addr_buf)==0){
+        strcpy(addr_buf,"127.0.0.1");
+    }
+    if(inet_pton(AF_INET,addr_buf,&server_addr.sin_addr)<=0){
+        printf("\nCould not assign ip address");
     }
 
     int connection_status = connect(sockfd, (struct sockaddr *) &server_addr, sizeof(server_addr));
     if(connection_status < 0){
-        printf("Could not connect to server");
+        printf("\nCould not connect to server");
         return 1;
     }
 
@@ -141,7 +155,7 @@ int client(){
         char ch;
         int index = 0;
 
-
+        printf("lain: ");
         while((ch = getchar()) != '\n' && ch != EOF){
             if(index >= sizeof(buf)){
                 buf=realloc(buf,sizeof(buf)+(32*sizeof(char)));
@@ -151,12 +165,11 @@ int client(){
         }
 
         //input = fgets(buf,sizeof(buf),stdin);
-
+    
         size_t len = strlen(buf);
         if (len > 0 && buf[len - 1] == '\n') {
             buf[len - 1] = '\0';
         }
-        printf("%s", buf);
 
         if(strlen(buf)>0){
             ssize_t bytes = send(sockfd, buf, strlen(buf),0);
@@ -168,7 +181,6 @@ int client(){
         }
 
 
-        printf("\nMessage: %s\n",buf);
     }
 
     close(sockfd);
