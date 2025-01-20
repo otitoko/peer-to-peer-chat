@@ -84,22 +84,27 @@ int server(){
     }
     */
 
+
     while(1){
         char buf[1024];
 
         memset(buf,0,sizeof(buf));
         ssize_t bytes = recv(acceptfd, buf, sizeof(buf)-1,0);
 
-        printf("\nanon:");
-        buf[bytes] = '\0';
-        printf("%s",buf);
 
         if(bytes<0){
             printf("Error recieving message");
+            return 1;
         }
         else if(bytes == 0){
             printf("client dc");
-            sleep(1000);
+            return 1;
+        }
+        else{
+            printf("\nanon:");
+            buf[bytes] = '\0';
+            printf("%s",buf);
+            fflush(stdout);
         }
     }
 
@@ -124,7 +129,11 @@ int client(){
         printf("Could not assign ip address");
     }
 
-    connect(sockfd, (struct sockaddr *) &server_addr, sizeof(server_addr));
+    int connection_status = connect(sockfd, (struct sockaddr *) &server_addr, sizeof(server_addr));
+    if(connection_status < 0){
+        printf("Could not connect to server");
+        return 1;
+    }
 
     while(1){
         char *buf = malloc(32);
@@ -133,11 +142,9 @@ int client(){
         int index = 0;
 
 
-        printf("Send a message to the server: ");
-
         while((ch = getchar()) != '\n' && ch != EOF){
             if(index >= sizeof(buf)){
-                realloc(buf,sizeof(buf)+(32*sizeof(char)));
+                buf=realloc(buf,sizeof(buf)+(32*sizeof(char)));
             }
             buf[index] = ch;
             index++;
@@ -151,10 +158,13 @@ int client(){
         }
         printf("%s", buf);
 
-        ssize_t bytes = send(sockfd, buf, strlen(buf),0);
-        if(bytes<=0){
-            printf("\nmsg didnt send\n");
-            return 1;
+        if(strlen(buf)>0){
+            ssize_t bytes = send(sockfd, buf, strlen(buf),0);
+            if(bytes<=0){
+                printf("\nmsg didnt send\n");
+                return 1;
+            }
+            fflush(stdout);
         }
 
 
