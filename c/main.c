@@ -75,25 +75,32 @@ int server(){
     if(acceptfd<0){
         printf("Could not connect to client\n");
     }
+    else{
+        printf("Connected to anon\n");
+    }
     /*
     for(int i=0;i<3;i++){
         dup2(acceptfd,i);
     }
     */
-    char buf[1024];
 
-    memset(buf,0,sizeof(buf));
-    ssize_t bytes = recv(acceptfd, buf, sizeof(buf)-1,0);
+    while(1){
+        char buf[1024];
 
-    if(bytes<0){
-        printf("Error recieving message");
-    }
-    else if(bytes == 0){
-        printf("client dc");
-    }
-    else {
+        memset(buf,0,sizeof(buf));
+        ssize_t bytes = recv(acceptfd, buf, sizeof(buf)-1,0);
+
+        printf("\nanon:");
         buf[bytes] = '\0';
         printf("%s",buf);
+
+        if(bytes<0){
+            printf("Error recieving message");
+        }
+        else if(bytes == 0){
+            printf("client dc");
+            sleep(1000);
+        }
     }
 
     close(acceptfd);
@@ -119,38 +126,40 @@ int client(){
 
     connect(sockfd, (struct sockaddr *) &server_addr, sizeof(server_addr));
 
-    char *buf = malloc(32);
+    while(1){
+        char *buf = malloc(32);
 
-    char ch;
-    int index = 0;
+        char ch;
+        int index = 0;
 
 
-    printf("Send a message to the server: ");
+        printf("Send a message to the server: ");
 
-    while((ch = getchar()) != '\n' && ch != EOF){
-        if(index >= sizeof(buf)){
-            realloc(buf,sizeof(buf)+(32*sizeof(char)));
+        while((ch = getchar()) != '\n' && ch != EOF){
+            if(index >= sizeof(buf)){
+                realloc(buf,sizeof(buf)+(32*sizeof(char)));
+            }
+            buf[index] = ch;
+            index++;
         }
-        buf[index] = ch;
-        index++;
+
+        //input = fgets(buf,sizeof(buf),stdin);
+
+        size_t len = strlen(buf);
+        if (len > 0 && buf[len - 1] == '\n') {
+            buf[len - 1] = '\0';
+        }
+        printf("%s", buf);
+
+        ssize_t bytes = send(sockfd, buf, strlen(buf),0);
+        if(bytes<=0){
+            printf("\nmsg didnt send\n");
+            return 1;
+        }
+
+
+        printf("\nMessage: %s\n",buf);
     }
-
-    //input = fgets(buf,sizeof(buf),stdin);
-
-    size_t len = strlen(buf);
-    if (len > 0 && buf[len - 1] == '\n') {
-        buf[len - 1] = '\0';
-    }
-    printf("%s", buf);
-
-    ssize_t bytes = send(sockfd, buf, strlen(buf),0);
-    if(bytes<=0){
-        printf("\nmsg didnt send\n");
-        return 1;
-    }
-
-
-    printf("\nMessage: %s\n",buf);
 
     close(sockfd);
 
