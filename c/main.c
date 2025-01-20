@@ -132,6 +132,7 @@ int client(){
             realloc(buf,sizeof(buf)+(32*sizeof(char)));
         }
         buf[index] = ch;
+        index++;
     }
 
     //input = fgets(buf,sizeof(buf),stdin);
@@ -140,6 +141,7 @@ int client(){
     if (len > 0 && buf[len - 1] == '\n') {
         buf[len - 1] = '\0';
     }
+    printf("%s", buf);
 
     ssize_t bytes = send(sockfd, buf, strlen(buf),0);
     if(bytes<=0){
