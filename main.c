@@ -12,6 +12,7 @@ int server();
 int client();
 
 int send_msg(int index,char ch, char *buf, int sockfd);
+int receive_msg(char *buf,int buf_size,int acceptfd);
 
 struct sockaddr_in listener_addr;
 
@@ -82,26 +83,13 @@ int server(){
 
 
     while(1){
-        char buf[1024];
+        int buf_size;
+        char *buf = malloc(buf_size);
 
-        memset(buf,0,sizeof(buf));
-        ssize_t bytes = recv(acceptfd, buf, sizeof(buf)-1,0);
+        //memset(buf,0,sizeof(buf));
 
-
-        if(bytes<0){
-            printf("\nError recieving message");
-            return 1;
-        }
-        else if(bytes == 0){
-            printf("\nClient has disconnected");
-            return 1;
-        }
-        else{
-            printf("\nanon: ");
-            buf[bytes] = '\0';
-            printf("%s",buf);
-            fflush(stdout);
-        }
+        receive_msg(buf,buf_size,acceptfd);
+        
     }
 
     close(acceptfd);
@@ -146,7 +134,7 @@ int client(){
     }
 
     while(1){
-        char *buf = malloc(32);
+        char *buf = malloc(128);
 
         char ch;
         int index = 0;
@@ -161,15 +149,33 @@ int client(){
 
 }
 
-void recieve_msg(){
+int receive_msg(char *buf,int buf_size,int acceptfd){
 
+        ssize_t bytes = recv(acceptfd, buf, buf_size-1,0);
+
+
+        if(bytes<0){
+            printf("\nError recieving message");
+            return 1;
+        }
+        else if(bytes == 0){
+            printf("\nClient has disconnected");
+            return 1;
+        }
+        else{
+            printf("\nanon: ");
+            buf[bytes] = '\0';
+            printf("%s",buf);
+            fflush(stdout);
+            return 1;
+        }
 }
 
 int send_msg(int index,char ch, char *buf, int sockfd){
 
         while((ch = getchar()) != '\n' && ch != EOF){
-            if(index >= sizeof(buf)){
-                buf=realloc(buf,sizeof(buf)+(32*sizeof(char)));
+            if(index >= sizeof(buf)-1){
+                buf=realloc(buf,strlen(buf)+(32*sizeof(char)));
             }
             buf[index] = ch;
             index++;
