@@ -11,6 +11,7 @@
 int server();
 int client();
 
+int send_msg(int index,char ch, char *buf, int sockfd);
 
 struct sockaddr_in listener_addr;
 
@@ -78,11 +79,6 @@ int server(){
     else{
         printf("Connected to anon\n");
     }
-    /*
-    for(int i=0;i<3;i++){
-        dup2(acceptfd,i);
-    }
-    */
 
 
     while(1){
@@ -156,6 +152,21 @@ int client(){
         int index = 0;
 
         printf("lain: ");
+        send_msg(index,ch,buf,sockfd);
+
+
+    }
+
+    close(sockfd);
+
+}
+
+void recieve_msg(){
+
+}
+
+int send_msg(int index,char ch, char *buf, int sockfd){
+
         while((ch = getchar()) != '\n' && ch != EOF){
             if(index >= sizeof(buf)){
                 buf=realloc(buf,sizeof(buf)+(32*sizeof(char)));
@@ -164,7 +175,6 @@ int client(){
             index++;
         }
 
-        //input = fgets(buf,sizeof(buf),stdin);
     
         size_t len = strlen(buf);
         if (len > 0 && buf[len - 1] == '\n') {
@@ -179,10 +189,4 @@ int client(){
             }
             fflush(stdout);
         }
-
-
-    }
-
-    close(sockfd);
-
 }
