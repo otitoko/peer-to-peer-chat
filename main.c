@@ -89,6 +89,7 @@ int server(){
         //memset(buf,0,sizeof(buf));
 
         receive_msg(buf,buf_size,acceptfd);
+        
     }
 
     close(acceptfd);
