@@ -12,6 +12,7 @@ int server();
 int client();
 
 int send_msg(int index,char ch, char *buf, int sockfd);
+int receive_msg(char *buf,int acceptfd);
 
 struct sockaddr_in listener_addr;
 
@@ -82,26 +83,11 @@ int server(){
 
 
     while(1){
-        char buf[1024];
+        char *buf = malloc(32);
 
         memset(buf,0,sizeof(buf));
-        ssize_t bytes = recv(acceptfd, buf, sizeof(buf)-1,0);
 
-
-        if(bytes<0){
-            printf("\nError recieving message");
-            return 1;
-        }
-        else if(bytes == 0){
-            printf("\nClient has disconnected");
-            return 1;
-        }
-        else{
-            printf("\nanon: ");
-            buf[bytes] = '\0';
-            printf("%s",buf);
-            fflush(stdout);
-        }
+        receive_msg(buf,acceptfd);
     }
 
     close(acceptfd);
@@ -161,8 +147,25 @@ int client(){
 
 }
 
-void recieve_msg(){
+int receive_msg(char *buf,int acceptfd){
 
+        ssize_t bytes = recv(acceptfd, buf, sizeof(buf)-1,0);
+
+
+        if(bytes<0){
+            printf("\nError recieving message");
+            return 1;
+        }
+        else if(bytes == 0){
+            printf("\nClient has disconnected");
+            return 1;
+        }
+        else{
+            printf("\nanon: ");
+            buf[bytes] = '\0';
+            printf("%s",buf);
+            fflush(stdout);
+        }
 }
 
 int send_msg(int index,char ch, char *buf, int sockfd){
