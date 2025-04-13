@@ -6,13 +6,18 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <assert.h>
+
+#define MSG_CHAR_LIMIT 256
+#define SENDER "lain"
+#define RECEIVER "anon"
 
 
 int server();
 int client();
 
-int send_msg(int index,char ch, char *buf, int sockfd);
-int receive_msg(char *buf,int buf_size,int acceptfd);
+int send_msg(char *buf, int sockfd);
+int receive_msg(char *buf,int acceptfd);
 
 struct sockaddr_in listener_addr;
 
@@ -83,12 +88,12 @@ int server(){
 
 
     while(1){
-        int buf_size;
-        char *buf = malloc(buf_size);
+        char *buf = malloc(MSG_CHAR_LIMIT);
 
         //memset(buf,0,sizeof(buf));
-
-        receive_msg(buf,buf_size,acceptfd);
+        printf("anon: ");
+        int ret=receive_msg(buf,acceptfd);
+        assert(ret==0);
         
     }
 
@@ -134,13 +139,11 @@ int client(){
     }
 
     while(1){
-        char *buf = malloc(128);
+        char *buf = malloc(MSG_CHAR_LIMIT);
 
-        char ch;
-        int index = 0;
 
         printf("lain: ");
-        send_msg(index,ch,buf,sockfd);
+        send_msg(buf,sockfd);
 
 
     }
@@ -149,9 +152,9 @@ int client(){
 
 }
 
-int receive_msg(char *buf,int buf_size,int acceptfd){
+int receive_msg(char *buf,int acceptfd){
 
-        ssize_t bytes = recv(acceptfd, buf, buf_size-1,0);
+        ssize_t bytes = recv(acceptfd, buf, MSG_CHAR_LIMIT-1,0);
 
 
         if(bytes<0){
@@ -163,36 +166,18 @@ int receive_msg(char *buf,int buf_size,int acceptfd){
             return 1;
         }
         else{
-            printf("\nanon: ");
-            buf[bytes] = '\0';
             printf("%s",buf);
             fflush(stdout);
-            return 1;
+            return 0;
         }
 }
 
-int send_msg(int index,char ch, char *buf, int sockfd){
+int send_msg(char *buf, int sockfd){
+    buf=fgets(buf, MSG_CHAR_LIMIT, stdin);
 
-        while((ch = getchar()) != '\n' && ch != EOF){
-            if(index >= sizeof(buf)-1){
-                buf=realloc(buf,strlen(buf)+(32*sizeof(char)));
-            }
-            buf[index] = ch;
-            index++;
-        }
+    assert(buf!=NULL);
 
-    
-        size_t len = strlen(buf);
-        if (len > 0 && buf[len - 1] == '\n') {
-            buf[len - 1] = '\0';
-        }
-
-        if(strlen(buf)>0){
-            ssize_t bytes = send(sockfd, buf, strlen(buf),0);
-            if(bytes<=0){
-                printf("\nmsg didnt send\n");
-                return 1;
-            }
-            fflush(stdout);
-        }
+    ssize_t bytes = send(sockfd, buf, strlen(buf),0);
+    fflush(stdout);
+    return 0;
 }
