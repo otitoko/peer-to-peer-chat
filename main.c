@@ -175,21 +175,22 @@ void* receive_msg(void* args){
         //prevent zero char sending
         char *buf = malloc(MSG_CHAR_LIMIT);
         while(1){
-        ssize_t bytes = recv(receive_args->acceptfd, buf, MSG_CHAR_LIMIT-1,0);
+            memset(buf,0,MSG_CHAR_LIMIT);
+            ssize_t bytes = recv(receive_args->acceptfd, buf, MSG_CHAR_LIMIT-1,0);
 
 
-        if(bytes<0){
-            printf("\nError recieving message");
-            exit(EXIT_FAILURE);
-        }
-        else if(bytes == 0){
-            printf("\nClient has disconnected");
-            exit(EXIT_FAILURE);
-        }
-        else{
-            printf("received: %s",buf);
-            fflush(stdin);
-        }
+            if(bytes<0){
+                printf("\nError recieving message");
+                exit(EXIT_FAILURE);
+            }
+            else if(bytes == 0){
+                printf("\nClient has disconnected");
+                exit(EXIT_FAILURE);
+            }
+            else{
+                printf("received: %s",buf);
+                fflush(stdin);
+            }
         }
 }
 
@@ -203,6 +204,9 @@ void* send_msg(void *args){
 
         assert(buf!=NULL);
 
+        if(empty_string_check(buf)){
+            continue;
+        }
         ssize_t bytes = send(send_args->sockfd, buf, strlen(buf),0);
         printf("sent: %s",buf);
         fflush(stdin);
@@ -210,10 +214,12 @@ void* send_msg(void *args){
 }
 
 int empty_string_check(char *buf){
+    int count=0;
     while(*buf){
         if(!isspace((unsigned char)*buf)){
             return 0;
         }
+        count++;
         buf++;
     }
     return 1;
