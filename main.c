@@ -189,7 +189,7 @@ void* receive_msg(void* args){
             }
             else{
                 printf("received: %s",buf);
-                fflush(stdin);
+                fflush(stdout);
             }
         }
 }
@@ -209,7 +209,7 @@ void* send_msg(void *args){
         }
         ssize_t bytes = send(send_args->sockfd, buf, strlen(buf),0);
         printf("sent: %s",buf);
-        fflush(stdin);
+        fflush(stdout);
     }
 }
 
