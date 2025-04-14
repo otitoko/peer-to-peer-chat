@@ -17,12 +17,18 @@
 int server();
 int client();
 
+
+struct thread_args{
+    int sockfd;
+    int acceptfd;
+};
 //message sending and receiving
-void send_msg(char *buf, int sockfd);
-void receive_msg(char *buf,int acceptfd);
+void* send_msg(void *args);
+void* receive_msg(void *args);
 
 //message jannying and succh
 int empty_string_check(char *buf);
+
 
 struct sockaddr_in listener_addr;
 
@@ -59,6 +65,7 @@ int main(){
 
 
 int server(){
+    pthread_t receive_thread,send_thread;
     int serverfd = socket(AF_INET,SOCK_STREAM,0);
 
     listener_addr.sin_family = AF_INET;
@@ -91,23 +98,29 @@ int server(){
         printf("Connected to anon\n");
     }
 
+    struct thread_args server_thread_args={
+        .acceptfd=acceptfd,
+        .sockfd=acceptfd
+    };
 
-    while(1){
-        char *buf = malloc(MSG_CHAR_LIMIT);
+    pthread_create(&receive_thread,NULL,&receive_msg,&server_thread_args);
+    pthread_create(&send_thread,NULL,&send_msg,&server_thread_args);
 
-        //memset(buf,0,sizeof(buf));
-        printf("anon: ");
-        receive_msg(buf,acceptfd);
-        
-    }
+    pthread_join(receive_thread,NULL);
+    pthread_join(send_thread,NULL);
+    
 
     close(acceptfd);
     close(serverfd);
 
+    return 1;
 }
     
 
 int client(){
+    pthread_t receive_thread,send_thread;
+    
+
     int sockfd = socket(AF_INET, SOCK_STREAM,0);
     if(sockfd<0){
         printf("\nError creating a socket.\n");
@@ -142,54 +155,71 @@ int client(){
         return 1;
     }
 
-    while(1){
-        char *buf = malloc(MSG_CHAR_LIMIT);
+    struct thread_args client_thread_args ={
+        .sockfd=sockfd,
+        .acceptfd=sockfd
+    };
+    pthread_create(&receive_thread,NULL,&receive_msg,&client_thread_args);
+    pthread_create(&send_thread,NULL,&send_msg,&client_thread_args);
 
-
-        printf("lain: ");
-        send_msg(buf,sockfd);
-
-
-    }
+    pthread_join(receive_thread,NULL);
+    pthread_join(send_thread,NULL);
 
     close(sockfd);
-
+    
+    return 0;
 }
 
-void receive_msg(char *buf,int acceptfd){
+void* receive_msg(void* args){
+    struct thread_args* receive_args=(struct thread_args*) args;
         //prevent zero char sending
-        ssize_t bytes = recv(acceptfd, buf, MSG_CHAR_LIMIT-1,0);
+        char *buf = malloc(MSG_CHAR_LIMIT);
+        while(1){
+            memset(buf,0,MSG_CHAR_LIMIT);
+            ssize_t bytes = recv(receive_args->acceptfd, buf, MSG_CHAR_LIMIT-1,0);
 
 
-        if(bytes<0){
-            printf("\nError recieving message");
-            exit(EXIT_FAILURE);
-        }
-        else if(bytes == 0){
-            printf("\nClient has disconnected");
-            exit(EXIT_FAILURE);
-        }
-        else{
-            printf("%s",buf);
-            fflush(stdout);
+            if(bytes<0){
+                printf("\nError recieving message");
+                exit(EXIT_FAILURE);
+            }
+            else if(bytes == 0){
+                printf("\nClient has disconnected");
+                exit(EXIT_FAILURE);
+            }
+            else{
+                printf("received: %s",buf);
+                fflush(stdout);
+            }
         }
 }
 
-void send_msg(char *buf, int sockfd){
-    buf=fgets(buf, MSG_CHAR_LIMIT, stdin);
+void* send_msg(void *args){
+    struct thread_args* send_args=(struct thread_args*) args;
+
+    char *buf = malloc(MSG_CHAR_LIMIT);
+    while(1){
+        buf=fgets(buf, MSG_CHAR_LIMIT, stdin);
 
 
-    assert(buf!=NULL);
+        assert(buf!=NULL);
 
-    ssize_t bytes = send(sockfd, buf, strlen(buf),0);
-    fflush(stdout);
+        if(empty_string_check(buf)){
+            continue;
+        }
+        ssize_t bytes = send(send_args->sockfd, buf, strlen(buf),0);
+        printf("sent: %s",buf);
+        fflush(stdout);
+    }
 }
 
 int empty_string_check(char *buf){
+    int count=0;
     while(*buf){
         if(!isspace((unsigned char)*buf)){
             return 0;
         }
+        count++;
         buf++;
     }
     return 1;
