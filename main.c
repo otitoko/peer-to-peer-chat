@@ -6,13 +6,23 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <assert.h>
+#include <ctype.h>
 
+#define MSG_CHAR_LIMIT 256
+#define SENDER "lain"
+#define RECEIVER "anon"
 
+//main functions
 int server();
 int client();
 
-int send_msg(int index,char ch, char *buf, int sockfd);
-int receive_msg(char *buf,int buf_size,int acceptfd);
+//message sending and receiving
+void send_msg(char *buf, int sockfd);
+void receive_msg(char *buf,int acceptfd);
+
+//message jannying and succh
+int empty_string_check(char *buf);
 
 struct sockaddr_in listener_addr;
 
@@ -83,12 +93,11 @@ int server(){
 
 
     while(1){
-        int buf_size;
-        char *buf = malloc(buf_size);
+        char *buf = malloc(MSG_CHAR_LIMIT);
 
         //memset(buf,0,sizeof(buf));
-
-        receive_msg(buf,buf_size,acceptfd);
+        printf("anon: ");
+        receive_msg(buf,acceptfd);
         
     }
 
@@ -134,13 +143,11 @@ int client(){
     }
 
     while(1){
-        char *buf = malloc(128);
+        char *buf = malloc(MSG_CHAR_LIMIT);
 
-        char ch;
-        int index = 0;
 
         printf("lain: ");
-        send_msg(index,ch,buf,sockfd);
+        send_msg(buf,sockfd);
 
 
     }
@@ -149,50 +156,41 @@ int client(){
 
 }
 
-int receive_msg(char *buf,int buf_size,int acceptfd){
-
-        ssize_t bytes = recv(acceptfd, buf, buf_size-1,0);
+void receive_msg(char *buf,int acceptfd){
+        //prevent zero char sending
+        ssize_t bytes = recv(acceptfd, buf, MSG_CHAR_LIMIT-1,0);
 
 
         if(bytes<0){
             printf("\nError recieving message");
-            return 1;
+            exit(EXIT_FAILURE);
         }
         else if(bytes == 0){
             printf("\nClient has disconnected");
-            return 1;
+            exit(EXIT_FAILURE);
         }
         else{
-            printf("\nanon: ");
-            buf[bytes] = '\0';
             printf("%s",buf);
             fflush(stdout);
-            return 1;
         }
 }
 
-int send_msg(int index,char ch, char *buf, int sockfd){
+void send_msg(char *buf, int sockfd){
+    buf=fgets(buf, MSG_CHAR_LIMIT, stdin);
 
-        while((ch = getchar()) != '\n' && ch != EOF){
-            if(index >= sizeof(buf)-1){
-                buf=realloc(buf,strlen(buf)+(32*sizeof(char)));
-            }
-            buf[index] = ch;
-            index++;
-        }
 
-    
-        size_t len = strlen(buf);
-        if (len > 0 && buf[len - 1] == '\n') {
-            buf[len - 1] = '\0';
-        }
+    assert(buf!=NULL);
 
-        if(strlen(buf)>0){
-            ssize_t bytes = send(sockfd, buf, strlen(buf),0);
-            if(bytes<=0){
-                printf("\nmsg didnt send\n");
-                return 1;
-            }
-            fflush(stdout);
+    ssize_t bytes = send(sockfd, buf, strlen(buf),0);
+    fflush(stdout);
+}
+
+int empty_string_check(char *buf){
+    while(*buf){
+        if(!isspace((unsigned char)*buf)){
+            return 0;
         }
+        buf++;
+    }
+    return 1;
 }
