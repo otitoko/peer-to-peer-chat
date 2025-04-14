@@ -7,17 +7,22 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <assert.h>
+#include <ctype.h>
 
 #define MSG_CHAR_LIMIT 256
 #define SENDER "lain"
 #define RECEIVER "anon"
 
-
+//main functions
 int server();
 int client();
 
-int send_msg(char *buf, int sockfd);
-int receive_msg(char *buf,int acceptfd);
+//message sending and receiving
+void send_msg(char *buf, int sockfd);
+void receive_msg(char *buf,int acceptfd);
+
+//message jannying and succh
+int empty_string_check(char *buf);
 
 struct sockaddr_in listener_addr;
 
@@ -92,8 +97,7 @@ int server(){
 
         //memset(buf,0,sizeof(buf));
         printf("anon: ");
-        int ret=receive_msg(buf,acceptfd);
-        assert(ret==0);
+        receive_msg(buf,acceptfd);
         
     }
 
@@ -152,32 +156,41 @@ int client(){
 
 }
 
-int receive_msg(char *buf,int acceptfd){
-
+void receive_msg(char *buf,int acceptfd){
+        //prevent zero char sending
         ssize_t bytes = recv(acceptfd, buf, MSG_CHAR_LIMIT-1,0);
 
 
         if(bytes<0){
             printf("\nError recieving message");
-            return 1;
+            exit(EXIT_FAILURE);
         }
         else if(bytes == 0){
             printf("\nClient has disconnected");
-            return 1;
+            exit(EXIT_FAILURE);
         }
         else{
             printf("%s",buf);
             fflush(stdout);
-            return 0;
         }
 }
 
-int send_msg(char *buf, int sockfd){
+void send_msg(char *buf, int sockfd){
     buf=fgets(buf, MSG_CHAR_LIMIT, stdin);
+
 
     assert(buf!=NULL);
 
     ssize_t bytes = send(sockfd, buf, strlen(buf),0);
     fflush(stdout);
-    return 0;
+}
+
+int empty_string_check(char *buf){
+    while(*buf){
+        if(!isspace((unsigned char)*buf)){
+            return 0;
+        }
+        buf++;
+    }
+    return 1;
 }
