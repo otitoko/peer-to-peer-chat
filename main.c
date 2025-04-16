@@ -192,6 +192,8 @@ void* receive_msg(void* args){
                 fflush(stdout);
             }
         }
+
+        free(buf);
 }
 
 void* send_msg(void *args){
@@ -211,6 +213,7 @@ void* send_msg(void *args){
         printf("sent: %s",buf);
         fflush(stdout);
     }
+        free(buf);
 }
 
 int empty_string_check(char *buf){
