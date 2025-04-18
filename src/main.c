@@ -11,6 +11,7 @@
 
 
 #include "crypto.h"
+#include "conns.h"
 
 #define SENDER "lain"
 #define RECEIVER "anon"
@@ -28,10 +29,6 @@ void* receive_msg(void *args);
 int empty_string_check(char *buf);
 
 
-struct thread_args{
-    int sockfd;
-    int acceptfd;
-};
 
 struct sockaddr_in listener_addr;
 
@@ -72,7 +69,7 @@ int server(){
     pthread_t receive_thread,send_thread;
     int serverfd = socket(AF_INET,SOCK_STREAM,0);
 
-    listener_addr.sin_family =﻿ AF_INET;
+    listener_addr.sin_family = AF_INET;
     listener_addr.sin_port = htons(5555);
     listener_addr.sin_addr.s_addr = INADDR_ANY;
 
@@ -102,10 +99,16 @@ int server(){
         printf("Connected to anon\n");
     }
 
-    struct thread_args server_thread_args={
-        .acceptfd=acceptfd,
-        .sockfd=acceptfd
-    };
+    server_thread_args.acceptfd=acceptfd;
+    server_thread_args.sockfd=acceptfd;
+
+    crypto_init(data.crypto_type);
+    /*send keys over to client
+     *nonce
+     *key
+     * */
+
+
 
     pthread_create(&receive_thread,NULL,&receive_msg,&server_thread_args);
     pthread_create(&send_thread,NULL,&send_msg,&server_thread_args);
@@ -191,6 +194,8 @@ void* receive_msg(void* args){
                 exit(EXIT_FAILURE);
             }
             else{
+                chacha20_decrypt();
+                buf=crypto_data.plaintext;
                 printf("received: %s",buf);
                 fflush(stdout);
             }
@@ -201,7 +206,6 @@ void* send_msg(void *args){
     struct thread_args* send_args=(struct thread_args*) args;
 
     /* initalize key plus nonce*/
-    crypto_init(data.crypto_type);
 
     char *buf = malloc(MSG_CHAR_LIMIT);
     while(1){
@@ -213,10 +217,10 @@ void* send_msg(void *args){
         if(empty_string_check(buf)){
             continue;
         }
-
+        crypto_data.plaintext=(unsigned char *)buf;
         chacha20_encrypt();
-        ssize_t bytes = send(send_args->sockfd, data.ciphertext, strlen(data.ciphertext),0);
-        printf("sent: %s",buf);
+        ssize_t bytes = send(send_args->sockfd, crypto_data.ciphertext, strlen(crypto_data.ciphertext),0);
+        printf("sent: %s",crypto_data.ciphertext);
         fflush(stdout);
     }
 }

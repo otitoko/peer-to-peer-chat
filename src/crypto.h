@@ -7,8 +7,8 @@
 
 struct crypto_data{
     int crypto_type;
-    unsigned char* plaintext;
-    unsigned long long decrypted_len;
+    unsigned char* plaintext[MSG_CHAR_LIMIT];
+    unsigned long long plaintext_len;
     unsigned char* ciphertext[MSG_CHAR_LIMIT + crypto_aead_chacha20poly1305_ABYTES];
     unsigned long long ciphertext_len;
     unsigned char* nonce[crypto_aead_chacha20poly1305_NPUBBYTES];
