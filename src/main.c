@@ -32,13 +32,12 @@ int empty_string_check(char *buf);
 
 struct sockaddr_in listener_addr;
 
-struct crypto_data data;
 
 int main(){
 
     char input[3];
     int type;
-    data.crypto_type=1;
+    crypto_data.crypto_type=1;
 
     printf("Hello World!\n");
     printf("Choose handler type:\n");
@@ -102,7 +101,7 @@ int server(){
     server_thread_args.acceptfd=acceptfd;
     server_thread_args.sockfd=acceptfd;
 
-    crypto_init(data.crypto_type);
+    crypto_init(crypto_data.crypto_type);
     /*send keys over to client
      *nonce
      *key
@@ -217,10 +216,10 @@ void* send_msg(void *args){
         if(empty_string_check(buf)){
             continue;
         }
-        crypto_data.plaintext=(unsigned char *)buf;
+        memcpy(crypto_data.plaintext,buf,MSG_CHAR_LIMIT);
         chacha20_encrypt();
         ssize_t bytes = send(send_args->sockfd, crypto_data.ciphertext, strlen(crypto_data.ciphertext),0);
-        printf("sent: %s",crypto_data.ciphertext);
+        printf("sent: %s",(unsigned char*)crypto_data.ciphertext);
         fflush(stdout);
     }
 }
